@@ -1,0 +1,32 @@
+pipeline {
+    agent  any
+    
+    stages{
+        stage('Code'){
+            steps{
+                git url: 'https://github.com/anirudhadak2/todo-list-app.git', branch: 'main' 
+            }
+        }
+        stage('Build and Test'){
+            steps{
+                sh 'docker build . -t todo-app'
+            }
+        }
+        stage('Push'){
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+        	     sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                  sh "docker tag  todo-app  anirudhadak2/new-app:todo-app"
+		         sh "docker push anirudhadak2/new-app:todo-app"
+                 
+                }
+            }
+        }
+        stage('Deploy'){
+            steps{
+                sh "docker run -d  -p 18080:3000  anirudhadak2/new-app:todo-app"
+                sh "docker ps " 
+            }
+        }
+    }
+}
